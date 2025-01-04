@@ -84,8 +84,12 @@ async def periodic_serial_read():
                     movement = bool(int(parts[1]))
                     save_to_db(steam, movement)
                     print(f"Data saved: steam={steam}, movement={movement}")
-                    email_content = f"New Data Received:\nSteam: {steam}\nMovement: {movement}"
-                    await send_email("New Sensor Data", email_content)
+                    if steam > 80:
+                        email_content = "Los niveles de vapor están por sobre el máximo permitido, posible condensación."
+                        await send_email("ADVERTENCIA", email_content)
+                    if movement:
+                        email_content = f"Movimiento detectado a las {datetime.now().strftime('%H:%M:%S')} del día {datetime.now().strftime('%d/%m/%Y')}"
+                        await send_email("ADVERTENCIA", email_content)
                 else:
                     print(f"Invalid data format: {data}")
             except Exception as e:
