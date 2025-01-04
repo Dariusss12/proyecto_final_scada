@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+*.log
+
+# Environment variables
+.env
+
+# Virtual environments
+venv/
+env/
+.venv/
+.pytest_cache/
+
+# SQLite database
+*.db
+*.sqlite
+*.sqlite3
+
+# Byte-compiled files
+*.swp
+*.swo
+*.bak
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Cache
+*.cache
+*.coverage
+coverage.xml
+
+# Logs
+*.log
