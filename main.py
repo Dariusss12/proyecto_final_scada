@@ -8,6 +8,7 @@ import aiosmtplib
 from email.message import EmailMessage
 from dotenv import load_dotenv
 import os
+from datetime import datetime
 
 load_dotenv()
 
@@ -35,14 +36,37 @@ class SensorData(Base):
 
 Base.metadata.create_all(bind=engine)
 
-def read_serial():
+# Global serial connection
+ser = None
+
+def open_serial_connection():
+    global ser
     try:
-        with serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1) as ser:
-            line = ser.readline().decode("utf-8").strip()
-            return line
+        ser = serial.Serial(
+            SERIAL_PORT,
+            BAUD_RATE,
+            timeout=1,
+            bytesize=serial.EIGHTBITS,
+            parity=serial.PARITY_NONE,
+            stopbits=serial.STOPBITS_ONE,
+        )
+        print("Serial connection opened.")
     except serial.SerialException as e:
-        print(f"Error reading serial port: {e}")
-        return None
+        print(f"Error opening serial port: {e}")
+
+def read_serial():
+    global ser
+    if ser and ser.is_open:
+        try:
+            line = ser.read_until(b'\n').decode("utf-8").strip()
+            ser.reset_input_buffer()
+            return line
+        except serial.SerialException as e:
+            print(f"Error reading serial port: {e}")
+    else:
+        print("Serial port is not open.")
+    return None
+
 
 def save_to_db(steam: float, movement: bool):
     db = SessionLocal()
@@ -96,8 +120,16 @@ async def periodic_serial_read():
                 print(f"Error processing data: {e}")
         else:
             print("No data read from serial port.")
-        await asyncio.sleep(30)
+        await asyncio.sleep(10)
 
 @app.on_event("startup")
 async def start_background_tasks():
+    open_serial_connection()
     asyncio.create_task(periodic_serial_read())
+
+@app.on_event("shutdown")
+def close_serial_connection():
+    global ser
+    if ser and ser.is_open:
+        ser.close()
+        print("Serial connection closed.")
